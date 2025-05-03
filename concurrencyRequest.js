@@ -1,5 +1,5 @@
 import { request as queryStoreByType} from "./queryStoreByType.js";
-import { setSaveOrder } from "./saveOrder.js";
+import { request as saveOrder, setSaveOrder } from "./saveOrder.js";
 import { request as sliderVerify } from "./sliderVerify.js";
 
 
@@ -13,6 +13,9 @@ async function run() {
     const mainStore = await queryStoreByType();
     // console.log(mainStore);
 
-    setSaveOrder(catpchaData, mainStore);
+    const body = setSaveOrder(catpchaData, mainStore, 5, 22);
+
+    saveOrder(body);
     
+
 }

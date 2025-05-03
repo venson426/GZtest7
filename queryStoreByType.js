@@ -6,7 +6,7 @@ import fs from "fs";
 const dataObj = {
     cgCode: "0020C061256",
     sportCode: "003",
-    openDate: "2025-05-04",
+    openDate: "2025-05-06",
     booking: "Y",
     timestamp: Date.parse(new Date()) / 1e3
 };

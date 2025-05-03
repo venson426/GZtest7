@@ -3,46 +3,8 @@ import { encrypt, generatekey, getRSAData } from "./utils/encryption.js";
 import { decrypt, getRSAData_de } from "./utils/decryption.js";
 
 
-const dataObj = {
-    
-    cgId: "402881b441a660630141a712b12f0046",
-    cgCode: "0020C061256",
-    cgtype: "3",
-    terminal: "10",
-    
-    ordertotal: "70",
-    os: "wx",
-    queryType: "android",
-    lon: "",
-    lat: "",
-    subAdress: "",
-    sportsNum: "",
-    citys: "440100",
-    
-
-    userID: "8a42f49292e20335019396a96d213928",
-    openDate: "2025-05-04",
-    timestamp: Date.parse(new Date()) / 1e3,
-    captchaId: "",
-    captchaPoint: "",
-    storeId: ""
-};
-
-
-
-const data = JSON.stringify(dataObj);
-
-const ASEKey = generatekey();
-const ASEData = encrypt(data, ASEKey);
-const RSAData = getRSAData(ASEKey);
 
 const url = "https://www.quntitong.cn/sportinterNew/androidsign/saveOrder.do";
-
-const body = {
-    "type": "minip",
-    "secretKey": "P82ZRAxRG70wY138xHiYClx7DFKaAlcZhntkq7PUEv6C83erPiWQuWR7zaI7p6AL9s7KlAK1N2ndn+poITAQcgpBjRctcRsh9h8CugchMHjtUPuzKwSIuFEX7ISNzTsFIQIj0E62kqcgfB1C7E1J47Vic8EMy/lhNuh9NQLeSig=",
-    "encryptData": "x5/+EFKZ11nD7HKA7dYud8j5rmAjxolIuQU3ZtEFlzWQR58D1ylnTXFgw8G8nMTkhZ7uzUL1z1rmlVO+07sph3AH70GmAytKltNUI1s+8g0AsGhtdk25vW6YC9NvaSYEuDPCqpgbUPQU6J+NujfZjjr8lkUNoXQ8YwQv8jXtYzQ7WXsNsYd9czFwlw4MBU7+kqRZIuIZKAEfHiofHv3oyKqVrTro4uji5D3q4ZqPK4e8j9nehhl1qu991z9A1nw41RAj2jCRAXvXsp/GpCzpLW3Kt3QGtjPGJJ269tc7pIDWIhpynhyRiQ7G6ki6QKJaxOYQKWZGTsZFFpaEpH2s0cedNHrkaEuEf35VZt4Ev8XLZrElzQhYs1dBFc+RoRlyeiIjxIgnQqv1776ux3g+wkJxoJesAs6z7zCd+hgtC2C/emaM+XCB7HezYG3ne99E2etIiB6AByOo2sryen+hajqGjewVNUfEebACDCoNydJJMWs4GHns6fUqCwYtwr/wcdPTRbssgYFUgY+c1WVTMv2DUqbkNx+IT7MjzyusLNDBEuFJrP0LI9rxW/nvUpgC"
-};
 
 const headers = {
     "Host": "www.quntitong.cn",
@@ -62,7 +24,9 @@ const headers = {
 
 // request(); concurrencyRequest 偷跑原因，Server Error：请求不合法。就是有程序偷跑
 
-async function request() {
+// saveOrder把后面全部做完然后在request放个body，现在body里面是全新的程序。此body彼body。
+//在export出去concurrencyRequest
+export async function request(body) {
     try {
         const response = await axios.post(url, body, headers);
         console.log(response.data);
@@ -81,10 +45,60 @@ async function request() {
 }
 
 export function setSaveOrder(captchaData, mainStore, flidNum, flidTime) {
+    
+    const dataObj = {
+    
+        cgId: "402881b441a660630141a712b12f0046",
+        cgCode: "0020C061256",
+        cgtype: "3",
+        terminal: "10",
+        
+        // ordertotal: "",
+        // os: "wx",
+        // queryType: "android",
+        // lon: "",
+        // lat: "",
+        // subAdress: "",
+        // sportsNum: "",
+        // citys: "440100",
+        
+    
+        userID: "8a42f4917765e50a0178111dff593b09",
+        openDate: "2025-05-06",
+        timestamp: Date.parse(new Date()) / 1e3,
+        captchaId: "",
+        captchaPoint: "",
+        storeIds: ""
+    };
+    
     dataObj.captchaId = captchaData.imageId;
     dataObj.captchaPoint = captchaData.leftDistance;
-    dataObj.storeId = mainStore[0].storeList[0].resourceid;
+    dataObj.storeIds = mainStore[flidNum - 1].storeList[flidTime - 6].resourceid;
+    dataObj["num".concat(dataObj.storeIds)] = 1;
+//e 就是代替dataObj
+
     console.log(dataObj);
+
+    const data = JSON.stringify(dataObj);
+    
+    const ASEKey = generatekey();
+    const ASEData = encrypt(data, ASEKey);
+    const RSAData = getRSAData(ASEKey);
+    
+
+    const body = {
+        "type": "minip",
+        "secretKey": RSAData,
+        "encryptData": ASEData
+    };
+
+    return body;
 }
 
 //mianStore是一个超级大的对象数组！
+//把所有加密和body都放在function，这样每一次的dataObj到加密再到body整个流程都是新的，如果只放全局只会执行一次。
+//重点return boday中的“body”不要看，只要这个function叫什么名字。名字是setSaveOrder。！！！！重点！！
+//顺序很重要把dataObj放在加密前面，否者根本不能（参数不对）
+//queryStoreByType和saveOrder的时间都要在有效时间和同步！
+//setSaveOrder已经把场地和时间用function封装好了，就直接输入正常数字就好。
+//一个storeIds逼死无数人！！！！最后不能下单就是storeIds！！！
